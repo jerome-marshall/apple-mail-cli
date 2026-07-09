@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aml"
+version = "0.1.0"
+description = "Read-only, JSON-first CLI over the local Apple Mail + Calendar stores (for an Outlook work account added via macOS Internet Accounts)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Jerome Marshall" }]
+keywords = ["apple mail", "calendar", "eventkit", "cli", "outlook", "read-only"]
+
+# No third-party dependencies. Mail reads the Envelope Index (sqlite3) + .emlx
+# (email/plistlib); Calendar reads Calendar.sqlitedb directly (sqlite3). Both need
+# only Full Disk Access - no EventKit/pyobjc, no compiled wheels, no TCC prompt.
+dependencies = []
+
+[project.scripts]
+aml = "aml.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
