@@ -1,14 +1,14 @@
 # `apple-mail` — read-only Apple Mail + Calendar CLI
 
 `apple-mail` is a JSON-first, one-shot command-line tool that
-reads the **local** Apple Mail and Calendar stores. It exists to give AI agents
-**reliable, read-only** access to an Outlook **work** mailbox + calendar that has
-been added to macOS via **Internet Accounts** (the OS does the OAuth — no Azure
-app registration, no IT/admin, no Graph/EWS/IMAP).
+reads the **local** Apple Mail and Calendar stores. It gives scripts and AI agents
+**reliable, read-only** access to any mail + calendar account that macOS has synced
+locally via **Internet Accounts** (the OS handles authentication — no API tokens,
+no server registration, no Graph/EWS/IMAP setup).
 
-It replaces the flaky AppleScript-driven `olk` CLI. Because `apple-mail` reads static
-files (the Mail SQLite "Envelope Index" + `.emlx` message files) and queries
-EventKit directly, there is no per-call IPC tax and no app to keep running.
+Because `apple-mail` reads static files (the Mail SQLite "Envelope Index" + `.emlx`
+message files) and the Calendar SQLite store directly, there is no per-call IPC tax
+and no app to keep running.
 
 **It is read-only by construction.** There is no code path that sends, replies,
 moves, deletes, flags, or otherwise mutates anything.
@@ -23,13 +23,13 @@ moves, deletes, flags, or otherwise mutates anything.
 
 The Envelope Index schema changes between macOS releases, so `apple-mail` **introspects
 the schema at runtime** (table/column names, the `recipients.type` mapping, and
-the date encoding) rather than hardcoding it. Run `apple-mail mail schema` to see what
+the date encoding) rather than hard-coding it. Run `apple-mail mail schema` to see what
 it discovered on this machine.
 
-## Prerequisites (one-time, no IT needed)
+## Prerequisites (one-time)
 
-1. **The work account is added to Apple Mail.** System Settings → Internet
-   Accounts → add the Exchange/work account, enable **Mail** and **Calendars**,
+1. **The account is added to Apple Mail.** System Settings → Internet
+   Accounts → add the account, enable **Mail** and **Calendars**,
    and let it sync. In Mail → Settings → Accounts → Account Information, set it to
    **download full messages** (not "recent only") so bodies are local.
 2. **Full Disk Access** for the app that runs `apple-mail` (Cursor / iTerm / Terminal):
@@ -37,7 +37,7 @@ it discovered on this machine.
    on, then **fully quit and reopen** it. This is what lets `apple-mail` read both
    `~/Library/Mail` **and** the Calendar store. Direct file reads need *only* FDA —
    no Automation grant and **no separate Calendar permission**, since we read the
-   SQLite store rather than scripting the apps or using EventKit.
+   SQLite store rather than scripting the apps.
 
 Check everything at once:
 
@@ -48,7 +48,7 @@ apple-mail doctor
 ## Install
 
 ```bash
-pipx install ~/Workspace/apple-mail-cli      # or: pipx install -e ~/Workspace/apple-mail-cli for dev
+pipx install /path/to/apple-mail-cli      # or: pipx install -e /path/to/apple-mail-cli for dev
 ```
 
 No third-party dependencies — both mail and calendar read local SQLite stores
@@ -89,7 +89,7 @@ id from `apple-mail mail mailboxes`); an unscoped list interleaves Sent and othe
 ## Commands
 
 ```text
-apple-mail doctor                       # health: platform, FDA, mail store, calendar auth
+apple-mail doctor                       # health: platform, FDA, mail store, calendar store
 apple-mail version
 
 apple-mail mail list   [--mailbox X] [--after ISO] [--before ISO] [--unread] [--limit N] [--offset N]
@@ -103,7 +103,7 @@ apple-mail cal list   [--start ISO --end ISO | --days N] [--calendar NAME ...] [
 apple-mail cal get    <id>              # full event: all attendees + notes
 ```
 
-## Date/time semantics (same as `olk`)
+## Date/time semantics
 
 - **Naked ISO** (`2026-06-24T00:00:00`) → **local** time. Use this for today/tomorrow.
 - **Trailing `Z`** → UTC. **Explicit offset** (`+05:30`) → that offset.
@@ -121,7 +121,7 @@ apple-mail cal list --days 7
 |-----------------------------|----------------------------------------------------------------|
 | `FULL_DISK_ACCESS_REQUIRED` | Grant Full Disk Access, then reopen the app.                    |
 | `MAIL_STORE_NOT_FOUND`      | No `~/Library/Mail/V<N>`; add the account to Apple Mail.        |
-| `CALENDAR_STORE_NOT_FOUND`  | No Calendar store; add the account's Calendar in Internet Accounts. |
+| `CALENDAR_STORE_NOT_FOUND`  | No Calendar store; enable Calendars for the account in Internet Accounts. |
 | `NOT_FOUND`                 | Bad/stale id; re-list.                                          |
 | `VALIDATION_ERROR`          | Bad arguments; check `--help`.                                  |
 | `PLATFORM_UNSUPPORTED`      | macOS only.                                                     |
