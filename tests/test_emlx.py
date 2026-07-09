@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from aml.mail.emlx import parse_emlx
+from apple_mail.mail.emlx import parse_emlx
 
 
 def _write_emlx(path: Path, rfc822: bytes, trailer: bytes = b"") -> Path:

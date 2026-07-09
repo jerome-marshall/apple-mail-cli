@@ -26,7 +26,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from ..errors import AmlError, full_disk_access, not_found, platform_unsupported, validation
+from ..errors import AppleMailError, full_disk_access, not_found, platform_unsupported, validation
 from ..timeparse import unix_to_local_iso
 
 _CF_EPOCH = 978307200
@@ -71,7 +71,7 @@ def open_calendar_db():
     except PermissionError:
         raise full_disk_access() from None
     if not exists:
-        raise AmlError(
+        raise AppleMailError(
             "CALENDAR_STORE_NOT_FOUND",
             "Calendar.sqlitedb not found. Add the work account's Calendar via "
             "System Settings > Internet Accounts and let it sync.",
@@ -85,7 +85,7 @@ def open_calendar_db():
             raise full_disk_access() from None
 
         if has_wal:
-            tmp = Path(tempfile.mkdtemp(prefix="aml-cal-"))
+            tmp = Path(tempfile.mkdtemp(prefix="apple-mail-cal-"))
             try:
                 shutil.copy2(CAL_DB, tmp / "c.sqlitedb")
                 shutil.copy2(CAL_WAL, tmp / "c.sqlitedb-wal")
@@ -100,7 +100,7 @@ def open_calendar_db():
             except sqlite3.OperationalError as exc:
                 if "unable to open" in str(exc).lower():
                     raise full_disk_access() from None
-                raise AmlError("CALENDAR_STORE_ERROR", str(exc)) from None
+                raise AppleMailError("CALENDAR_STORE_ERROR", str(exc)) from None
 
         conn.row_factory = sqlite3.Row
         try:
@@ -334,5 +334,5 @@ def health() -> dict:
         with open_calendar_db() as conn:
             n = conn.execute("SELECT COUNT(*) AS c FROM CalendarItem").fetchone()["c"]
         return {"ok": True, "store": str(CAL_DB), "itemCount": n}
-    except AmlError as exc:
+    except AppleMailError as exc:
         return {"ok": False, "code": exc.code, "message": exc.message}

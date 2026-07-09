@@ -1,8 +1,8 @@
 import io
 import json
 
-from aml.envelope import emit_error, emit_success, list_payload
-from aml.errors import AmlError
+from apple_mail.envelope import emit_error, emit_success, list_payload
+from apple_mail.errors import AppleMailError
 
 
 class _Buf(io.StringIO):
@@ -12,9 +12,9 @@ class _Buf(io.StringIO):
 
 def test_success_compact_json():
     buf = _Buf()
-    emit_success({"name": "aml"}, "json", stream=buf)
+    emit_success({"name": "apple-mail"}, "json", stream=buf)
     obj = json.loads(buf.getvalue())
-    assert obj == {"ok": True, "data": {"name": "aml"}}
+    assert obj == {"ok": True, "data": {"name": "apple-mail"}}
 
 
 def test_list_payload_shape():
@@ -31,6 +31,6 @@ def test_ndjson_lists_emit_one_item_per_line():
 
 def test_error_envelope():
     buf = _Buf()
-    emit_error(AmlError("NOT_FOUND", "nope"), "json", stream=buf)
+    emit_error(AppleMailError("NOT_FOUND", "nope"), "json", stream=buf)
     obj = json.loads(buf.getvalue())
     assert obj == {"ok": False, "error": {"code": "NOT_FOUND", "message": "nope"}}

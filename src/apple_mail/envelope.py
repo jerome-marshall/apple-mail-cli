@@ -17,7 +17,7 @@ import json
 import sys
 
 from . import toon
-from .errors import AmlError
+from .errors import AppleMailError
 
 JSON = "json"
 NDJSON = "ndjson"
@@ -62,7 +62,7 @@ def emit_success(data, fmt: str = JSON, stream=None) -> None:
         )
 
 
-def emit_error(err: AmlError, fmt: str = JSON, stream=None) -> None:
+def emit_error(err: AppleMailError, fmt: str = JSON, stream=None) -> None:
     stream = stream if stream is not None else sys.stderr
     envelope = {"ok": False, "error": err.to_dict()}
 

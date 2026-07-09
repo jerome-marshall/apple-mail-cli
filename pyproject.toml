@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aml"
+name = "apple-mail"
 version = "0.1.0"
 description = "Read-only, JSON-first CLI over the local Apple Mail + Calendar stores (for an Outlook work account added via macOS Internet Accounts)."
 readme = "README.md"
@@ -18,7 +18,7 @@ keywords = ["apple mail", "calendar", "eventkit", "cli", "outlook", "read-only"]
 dependencies = []
 
 [project.scripts]
-aml = "aml.cli:main"
+apple-mail = "apple_mail.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

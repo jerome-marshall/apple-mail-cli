@@ -5,7 +5,7 @@ indentation-based, token-efficient encoding that collapses uniform arrays of
 objects into a header + rows. It is meant for pasting structured data into LLM
 prompts more cheaply than JSON, while staying lossless.
 
-This encoder covers the shapes ``aml`` actually emits:
+This encoder covers the shapes ``apple-mail`` actually emits:
 
 - objects (key: value, nested by indentation)
 - arrays of scalars            -> ``key[N]: a,b,c``

@@ -1,6 +1,6 @@
 from datetime import timezone
 
-from aml.timeparse import parse_dt, store_to_unix, to_epoch
+from apple_mail.timeparse import parse_dt, store_to_unix, to_epoch
 
 
 def test_naked_is_local():

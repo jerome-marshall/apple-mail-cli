@@ -1,10 +1,10 @@
-from aml.toon import encode
+from apple_mail.toon import encode
 
 
 def test_scalar_object():
-    out = encode({"ok": True, "data": {"name": "aml", "version": "0.1.0"}})
+    out = encode({"ok": True, "data": {"name": "apple-mail", "version": "0.1.0"}})
     assert "ok: true" in out
-    assert "name: aml" in out
+    assert "name: apple-mail" in out
     assert "version: 0.1.0" in out
 
 

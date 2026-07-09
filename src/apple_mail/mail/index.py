@@ -3,7 +3,7 @@
 Apple Mail's schema drifts between macOS releases, so this module resolves the
 real column names at runtime (via :class:`MailSchema`) and builds queries from
 whatever is present. Missing columns degrade to ``NULL`` rather than crashing.
-Verified against macOS 26 / Mail V10; ``aml mail schema`` dumps what was found.
+Verified against macOS 26 / Mail V10; ``apple-mail mail schema`` dumps what was found.
 
 All output here is *lightweight* (the tiered-output rule): subject, a cheap
 preview when the store has one, dates, mailbox, flags, and the full participant
@@ -26,13 +26,13 @@ import sqlite3
 from pathlib import Path
 from urllib.parse import unquote
 
-from ..errors import AmlError
+from ..errors import AppleMailError
 from ..timeparse import store_to_local_iso
 from .store import MailSchema
 
 _CF_EPOCH = 978307200
 
-# Apple Mail recipients.type convention (verify via `aml mail schema`).
+# Apple Mail recipients.type convention (verify via `apple-mail mail schema`).
 _RECIPIENT_TYPES = {0: "to", 1: "cc", 2: "bcc"}
 
 
@@ -49,7 +49,7 @@ class MailIndex:
         self.schema = schema
         self.version_dir = version_dir
         if not schema.has_table("messages"):
-            raise AmlError(
+            raise AppleMailError(
                 "MAIL_STORE_ERROR",
                 "Envelope Index has no 'messages' table; schema is unexpected.",
                 details={"tables": list(schema.tables)},
@@ -202,7 +202,7 @@ class MailIndex:
         if mailbox is not None and self.c_mailbox:
             ids = self._resolve_mailbox_ids(mailbox)
             if not ids:
-                raise AmlError("NOT_FOUND", f"no mailbox matching {mailbox!r}")
+                raise AppleMailError("NOT_FOUND", f"no mailbox matching {mailbox!r}")
             placeholders = ",".join("?" for _ in ids)
             clauses.append(f"m.{self.c_mailbox} IN ({placeholders})")
             params.extend(ids)

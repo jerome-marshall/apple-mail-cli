@@ -1,4 +1,4 @@
-"""``aml mail`` command handlers.
+"""``apple-mail mail`` command handlers.
 
 Each handler returns the ``data`` payload (a dict, or a list-payload built with
 ``envelope.list_payload``); the CLI wraps it in the ``{"ok": true, ...}`` envelope
@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 
 from ..envelope import list_payload
-from ..errors import AmlError, not_found, validation
+from ..errors import AppleMailError, not_found, validation
 from ..timeparse import to_epoch
 from .emlx import find_emlx, parse_emlx
 from .index import MailIndex
@@ -203,7 +203,7 @@ def cmd_schema(args) -> dict:
 
 
 def health() -> dict:
-    """Mail-side health for ``aml doctor``."""
+    """Mail-side health for ``apple-mail doctor``."""
     info: dict = {"ok": False}
     try:
         conn, version_dir = open_index()
@@ -212,6 +212,6 @@ def health() -> dict:
         count = conn.execute("SELECT COUNT(*) AS c FROM messages").fetchone()["c"]
         conn.close()
         info = {"ok": True, "versionDir": str(version_dir), "messageCount": count}
-    except AmlError as exc:
+    except AppleMailError as exc:
         info = {"ok": False, "code": exc.code, "message": exc.message}
     return info

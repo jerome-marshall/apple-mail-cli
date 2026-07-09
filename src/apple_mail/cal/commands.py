@@ -1,4 +1,4 @@
-"""``aml cal`` command handlers (read-only)."""
+"""``apple-mail cal`` command handlers (read-only)."""
 
 from __future__ import annotations
 

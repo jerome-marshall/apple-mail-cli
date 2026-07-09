@@ -1,4 +1,4 @@
-from aml.cal.store import _CF_EPOCH, _preview, cf_iso
+from apple_mail.cal.store import _CF_EPOCH, _preview, cf_iso
 
 
 def test_cf_iso_epoch_is_2001():

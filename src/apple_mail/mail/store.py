@@ -17,7 +17,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..errors import AmlError, full_disk_access, mail_store_not_found, platform_unsupported
+from ..errors import AppleMailError, full_disk_access, mail_store_not_found, platform_unsupported
 
 MAIL_ROOT = Path.home() / "Library" / "Mail"
 
@@ -70,7 +70,7 @@ def open_index() -> tuple[sqlite3.Connection, Path]:
         msg = str(exc).lower()
         if "unable to open" in msg or "authorization" in msg or "permission" in msg:
             raise full_disk_access() from None
-        raise AmlError("MAIL_STORE_ERROR", f"could not open Envelope Index: {exc}") from None
+        raise AppleMailError("MAIL_STORE_ERROR", f"could not open Envelope Index: {exc}") from None
     conn.row_factory = sqlite3.Row
     return conn, version_dir
 

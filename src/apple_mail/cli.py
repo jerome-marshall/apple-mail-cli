@@ -1,8 +1,8 @@
-"""``aml`` command-line entrypoint.
+"""``apple-mail`` command-line entrypoint.
 
 Read-only by construction: there are no send/move/delete/flag/create commands.
 Global output flags (``--json`` default, ``--ndjson``, ``--toon``) live on each
-leaf command. Run ``aml doctor`` once at the start of a session.
+leaf command. Run ``apple-mail doctor`` once at the start of a session.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from . import __version__
 from .cal import commands as cal_cmds
 from .cal import store as cal_store
 from .envelope import JSON, NDJSON, TOON, emit_error, emit_success
-from .errors import AmlError
+from .errors import AppleMailError
 from .mail import commands as mail_cmds
 
 
@@ -40,12 +40,12 @@ def _page_parent() -> argparse.ArgumentParser:
 
 
 def _cmd_version(args) -> dict:
-    return {"name": "aml", "version": __version__}
+    return {"name": "apple-mail", "version": __version__}
 
 
 def _cmd_doctor(args) -> dict:
     return {
-        "amlVersion": __version__,
+        "appleMailVersion": __version__,
         "python": platform.python_version(),
         "platform": {
             "system": platform.system(),
@@ -62,10 +62,10 @@ def build_parser() -> argparse.ArgumentParser:
     page = _page_parent()
 
     parser = argparse.ArgumentParser(
-        prog="aml",
+        prog="apple-mail",
         description="Read-only, JSON-first CLI over local Apple Mail + Calendar.",
     )
-    parser.add_argument("--version", action="version", version=f"aml {__version__}")
+    parser.add_argument("--version", action="version", version=f"apple-mail {__version__}")
     parser.set_defaults(func=None)
     top = parser.add_subparsers(dest="group")
 
@@ -147,7 +147,7 @@ def main(argv=None) -> int:
 
     try:
         data = func(args)
-    except AmlError as exc:
+    except AppleMailError as exc:
         emit_error(exc, fmt)
         return exc.exit_code
     except BrokenPipeError:
@@ -155,7 +155,7 @@ def main(argv=None) -> int:
     except KeyboardInterrupt:
         return 130
     except Exception as exc:  # noqa: BLE001 - last-resort envelope
-        emit_error(AmlError("INTERNAL_ERROR", f"{type(exc).__name__}: {exc}"), fmt)
+        emit_error(AppleMailError("INTERNAL_ERROR", f"{type(exc).__name__}: {exc}"), fmt)
         return 1
 
     emit_success(data, fmt)
