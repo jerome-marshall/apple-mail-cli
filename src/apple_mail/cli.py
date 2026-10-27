@@ -8,6 +8,7 @@ leaf command. Run ``apple-mail doctor`` once at the start of a session.
 from __future__ import annotations
 
 import argparse
+import os
 import platform
 import sys
 
@@ -17,6 +18,7 @@ from .cal import store as cal_store
 from .envelope import JSON, NDJSON, TOON, emit_error, emit_success
 from .errors import AppleMailError
 from .mail import commands as mail_cmds
+from .mail import store as mail_store
 
 
 def _output_parent() -> argparse.ArgumentParser:
@@ -44,14 +46,20 @@ def _cmd_version(args) -> dict:
 
 
 def _cmd_doctor(args) -> dict:
+    overrides = {
+        name: os.environ[name]
+        for name in (mail_store.MAIL_ROOT_ENV, cal_store.CAL_DIR_ENV)
+        if os.environ.get(name)
+    }
     return {
         "appleMailVersion": __version__,
         "python": platform.python_version(),
         "platform": {
             "system": platform.system(),
             "release": platform.release(),
-            "ok": sys.platform == "darwin",
+            "ok": sys.platform == "darwin" or bool(overrides),
         },
+        "storeOverrides": overrides,
         "mail": mail_cmds.health(),
         "calendar": cal_store.health(),
     }

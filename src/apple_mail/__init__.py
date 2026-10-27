@@ -5,4 +5,4 @@ deletes, flags, or otherwise mutates mail. Calendar access goes through EventKit
 which is inherently read-only here (we never call save/remove).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

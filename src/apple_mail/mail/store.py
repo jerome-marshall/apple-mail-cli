@@ -12,6 +12,7 @@ introspect tables/columns at runtime via ``MailSchema``.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import sys
 from dataclasses import dataclass, field
@@ -19,30 +20,42 @@ from pathlib import Path
 
 from ..errors import AppleMailError, full_disk_access, mail_store_not_found, platform_unsupported
 
-MAIL_ROOT = Path.home() / "Library" / "Mail"
+# Override for a copy of ~/Library/Mail (the folder holding V<N>), e.g. a
+# mirror on a Linux machine. Setting it also lifts the macOS-only check.
+MAIL_ROOT_ENV = "APPLE_MAIL_ROOT"
+
+
+def mail_root() -> Path:
+    override = os.environ.get(MAIL_ROOT_ENV)
+    return Path(override).expanduser() if override else Path.home() / "Library" / "Mail"
 
 
 def is_macos() -> bool:
     return sys.platform == "darwin"
 
 
+def store_supported() -> bool:
+    return is_macos() or bool(os.environ.get(MAIL_ROOT_ENV))
+
+
 def locate_version_dir() -> Path:
-    """Return the highest-numbered ``~/Library/Mail/V<N>`` directory."""
-    if not is_macos():
+    """Return the highest-numbered ``V<N>`` directory under the mail root."""
+    if not store_supported():
         raise platform_unsupported()
+    root = mail_root()
     try:
         candidates = [
             p
-            for p in MAIL_ROOT.iterdir()
+            for p in root.iterdir()
             if p.is_dir() and p.name.startswith("V") and p.name[1:].isdigit()
         ]
     except PermissionError:
         raise full_disk_access() from None
     except FileNotFoundError:
-        raise mail_store_not_found("~/Library/Mail does not exist") from None
+        raise mail_store_not_found(f"{root} does not exist") from None
 
     if not candidates:
-        raise mail_store_not_found("no V<N> directory under ~/Library/Mail")
+        raise mail_store_not_found(f"no V<N> directory under {root}")
     return sorted(candidates, key=lambda p: int(p.name[1:]))[-1]
 
 

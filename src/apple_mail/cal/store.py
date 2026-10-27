@@ -20,6 +20,7 @@ the live store).
 from __future__ import annotations
 
 import contextlib
+import os
 import shutil
 import sqlite3
 import sys
@@ -31,10 +32,17 @@ from ..timeparse import unix_to_local_iso
 
 _CF_EPOCH = 978307200
 
-CAL_DIR = Path.home() / "Library" / "Group Containers" / "group.com.apple.calendar"
-CAL_DB = CAL_DIR / "Calendar.sqlitedb"
-CAL_WAL = CAL_DIR / "Calendar.sqlitedb-wal"
-CAL_SHM = CAL_DIR / "Calendar.sqlitedb-shm"
+# Override for a copy of Calendar's group container (the folder holding
+# Calendar.sqlitedb), e.g. a mirror on a Linux machine. Setting it also lifts
+# the macOS-only check.
+CAL_DIR_ENV = "APPLE_MAIL_CALENDAR_DIR"
+
+
+def cal_dir() -> Path:
+    override = os.environ.get(CAL_DIR_ENV)
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / "Library" / "Group Containers" / "group.com.apple.calendar"
 
 # CalendarItem.status -> EKEventStatus-like names.
 _ESTATUS = {0: "none", 1: "confirmed", 2: "tentative", 3: "canceled"}
@@ -45,8 +53,8 @@ _PTYPE = {0: "unknown", 1: "person", 2: "room", 3: "resource", 4: "group"}
 _STORE_TYPE = {0: "local", 1: "exchange", 2: "caldav", 3: "mobileme", 4: "subscribed", 5: "birthday"}
 
 
-def _is_macos() -> bool:
-    return sys.platform == "darwin"
+def _store_supported() -> bool:
+    return sys.platform == "darwin" or bool(os.environ.get(CAL_DIR_ENV))
 
 
 def cf_iso(ts) -> str | None:
@@ -64,10 +72,14 @@ def _preview(text, n: int = 200) -> str | None:
 
 @contextlib.contextmanager
 def open_calendar_db():
-    if not _is_macos():
+    if not _store_supported():
         raise platform_unsupported()
+    base = cal_dir()
+    cal_db = base / "Calendar.sqlitedb"
+    cal_wal = base / "Calendar.sqlitedb-wal"
+    cal_shm = base / "Calendar.sqlitedb-shm"
     try:
-        exists = CAL_DB.exists()
+        exists = cal_db.exists()
     except PermissionError:
         raise full_disk_access() from None
     if not exists:
@@ -80,23 +92,23 @@ def open_calendar_db():
     tmp = None
     try:
         try:
-            has_wal = CAL_WAL.exists() and CAL_WAL.stat().st_size > 0
+            has_wal = cal_wal.exists() and cal_wal.stat().st_size > 0
         except PermissionError:
             raise full_disk_access() from None
 
         if has_wal:
             tmp = Path(tempfile.mkdtemp(prefix="apple-mail-cal-"))
             try:
-                shutil.copy2(CAL_DB, tmp / "c.sqlitedb")
-                shutil.copy2(CAL_WAL, tmp / "c.sqlitedb-wal")
-                if CAL_SHM.exists():
-                    shutil.copy2(CAL_SHM, tmp / "c.sqlitedb-shm")
+                shutil.copy2(cal_db, tmp / "c.sqlitedb")
+                shutil.copy2(cal_wal, tmp / "c.sqlitedb-wal")
+                if cal_shm.exists():
+                    shutil.copy2(cal_shm, tmp / "c.sqlitedb-shm")
             except PermissionError:
                 raise full_disk_access() from None
             conn = sqlite3.connect(str(tmp / "c.sqlitedb"), timeout=5)
         else:
             try:
-                conn = sqlite3.connect(f"file:{CAL_DB}?mode=ro&immutable=1", uri=True, timeout=5)
+                conn = sqlite3.connect(f"file:{cal_db}?mode=ro&immutable=1", uri=True, timeout=5)
             except sqlite3.OperationalError as exc:
                 if "unable to open" in str(exc).lower():
                     raise full_disk_access() from None
@@ -333,6 +345,6 @@ def health() -> dict:
     try:
         with open_calendar_db() as conn:
             n = conn.execute("SELECT COUNT(*) AS c FROM CalendarItem").fetchone()["c"]
-        return {"ok": True, "store": str(CAL_DB), "itemCount": n}
+        return {"ok": True, "store": str(cal_dir() / "Calendar.sqlitedb"), "itemCount": n}
     except AppleMailError as exc:
         return {"ok": False, "code": exc.code, "message": exc.message}

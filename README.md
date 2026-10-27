@@ -26,6 +26,17 @@ the schema at runtime** (table/column names, the `recipients.type` mapping, and
 the date encoding) rather than hard-coding it. Run `apple-mail mail schema` to see what
 it discovered on this machine.
 
+### Reading a copy of the stores
+
+Two environment variables point `apple-mail` at a copy instead of the live folders, for example a mirror synced to a Linux machine:
+
+| Variable | Points at |
+|---|---|
+| `APPLE_MAIL_ROOT` | the folder holding `V<N>` (a copy of `~/Library/Mail`) |
+| `APPLE_MAIL_CALENDAR_DIR` | the folder holding `Calendar.sqlitedb` |
+
+Setting either lifts the macOS-only check for that store, so `apple-mail` runs on Linux against the copy. Snapshot the live SQLite files (`sqlite3 ... ".backup ..."`) rather than copying them mid-write. A message whose `.emlx` is missing from the copy still lists from the index; `mail get` returns `bodyAvailable: false`. `apple-mail doctor` reports the overrides in effect under `storeOverrides`.
+
 ## Prerequisites (one-time)
 
 1. **The account is added to Apple Mail.** System Settings → Internet

@@ -75,5 +75,6 @@ def validation(msg: str) -> AppleMailError:
 def platform_unsupported() -> AppleMailError:
     return AppleMailError(
         "PLATFORM_UNSUPPORTED",
-        "apple-mail only works on macOS; it reads the local Apple Mail and Calendar stores.",
+        "apple-mail reads the local Apple Mail and Calendar stores, so it needs macOS, "
+        "or APPLE_MAIL_ROOT / APPLE_MAIL_CALENDAR_DIR pointing at a copy of them.",
     )
