@@ -1,7 +1,8 @@
 ---
 name: apple-mail-cli
 description: >
-  Read the user's local Apple Mail + Calendar on macOS with the `apple-mail` CLI:
+  Read the user's local Apple Mail + Calendar on macOS (or a synced copy of them on
+  Linux) with the `apple-mail` CLI:
   summarize, search, or read work email; check the calendar; find a thread, an
   attachment list, or who's on a meeting. `apple-mail` reads the Outlook work account
   that macOS synced into Apple Mail/Calendar (Internet Accounts) — so it needs no
@@ -37,6 +38,15 @@ apple-mail doctor --json
 - `MAIL_STORE_NOT_FOUND` / `CALENDAR_STORE_NOT_FOUND` — the work account (or its
   Calendar) isn't synced into Apple Mail/Calendar yet. Tell the user to add it via
   System Settings → Internet Accounts and let it sync.
+
+### On Linux: reading a mirror
+
+Off macOS, `apple-mail` reads a copy of the stores that another job syncs from the Mac. `APPLE_MAIL_ROOT` (the folder holding `V<N>`) and `APPLE_MAIL_CALENDAR_DIR` (the folder holding `Calendar.sqlitedb`) point at it; `doctor` lists them under `data.storeOverrides`. With neither set you get `PLATFORM_UNSUPPORTED`. Differences from the Mac:
+
+- The data is as fresh as the last sync. Report the mirror's age when timing matters ("mail as of 10:15").
+- A mirror may carry message bodies for recent mail only. Older messages still list and search from the index, but `mail read` returns `bodyAvailable: false`. That is expected, so don't send the user to Mail settings over it.
+- `FULL_DISK_ACCESS_REQUIRED` doesn't apply here. A missing store means the sync hasn't run or failed.
+- GNU `date`: use `date -d tomorrow +%Y-%m-%d` where the recipes use `date -v+1d`.
 
 ## Output contract
 
@@ -136,16 +146,16 @@ person about a topic, tomorrow's calendar with attendees — live in
 | `CALENDAR_STORE_NOT_FOUND` | No Calendar store | Add the account's Calendar in Internet Accounts; let it sync |
 | `NOT_FOUND` | Bad/stale id | Re-list, ids can change |
 | `VALIDATION_ERROR` | Bad arguments | Re-read `--help` |
-| `PLATFORM_UNSUPPORTED` | Not macOS | `apple-mail` is macOS-only |
+| `PLATFORM_UNSUPPORTED` | Not macOS and no mirror overrides set | See [On Linux: reading a mirror](#on-linux-reading-a-mirror) |
 
-If a body comes back with `bodyAvailable: false`, the message isn't fully
-downloaded locally — tell the user to set the account to download full messages
-(Mail → Settings → Accounts), not "recent only".
+On the Mac, a body that comes back with `bodyAvailable: false` means the message
+isn't fully downloaded locally. Tell the user to set the account to download full
+messages (Mail → Settings → Accounts), not "recent only".
 
 ## When NOT to use
 
 - The user wants to **send, reply, move, delete, flag, or schedule** — `apple-mail` is
   read-only. Use the `outlook-cli` (`olk`) skill, or have the user act in the app.
-- Not macOS, or the account isn't synced into Apple Mail/Calendar.
+- Not macOS and no mirror configured, or the account isn't synced into Apple Mail/Calendar.
 - The user explicitly wants Outlook Web / Graph / cross-tenant org-wide queries.
 - Tasks, reminders, notes, contacts, or categories — out of scope.
